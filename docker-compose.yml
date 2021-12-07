@@ -1,0 +1,28 @@
+version: '3.7'
+services:
+  arangodb_db_container:
+    image: arangodb:latest
+    environment:
+      ARANGO_ROOT_PASSWORD: rootpassword
+    ports:
+      - 8529:8529
+    volumes:
+      - arangodb_data_container:/var/lib/arangodb3
+      - arangodb_apps_data_container:/var/lib/arangodb3-apps
+  elnour-api:
+    build: .
+    environment:
+      ARANGO_DB_URL: http://arangodb_db_container:8529
+      NODE_ENV: production
+    ports:
+      - 4000:4000  
+    volumes:
+      - ./server:/var/server
+    stdin_open: true
+      
+    
+
+
+volumes:
+  arangodb_data_container:
+  arangodb_apps_data_container:
