@@ -6,11 +6,12 @@ var cors = require('cors')
 var arangojs = require('arangojs');
 var aql = arangojs.aql;
 
-const username = 'root';
-const password = 'rootpassword';
-const host = 'localhost';
-const port2 = 8529;
-const database = '_system';
+
+// const username = 'root';
+// const password = 'rootpassword';
+// const host = 'localhost';
+// const port2 = 8529;
+// const database = '_system';
 
 const path = require('path');
 const exp = require('constants');
@@ -22,32 +23,157 @@ const exp = require('constants');
 //   databaseName: false // don't automatically append database path to URL
 // });
 
-const db = new arangojs.Database({
-  url: process.env.ARANGO_DB_URL || "http://localhost:8529/",
-  databaseName: "_system",
-  auth: { username: "root", password: "rootpassword" },
-});
+// const db = new arangojs.Database({
+//   url: process.env.ARANGO_DB_URL || "http://localhost:8529/",
+//   databaseName: "_system",
+//   auth: { username: "root", password: "rootpassword" },
+// });
 
-var readFile =  function() {
+// var readFile =  function() {
 
-  const fs = require('fs');
-  if (fs.existsSync('ChatHistory.json')) {
+//   const fs = require('fs');
+//   if (fs.existsSync('ChatHistory.json')) {
 
-    let messages = JSON.parse(fs.readFileSync('ChatHistory.json'));
+//     let messages = JSON.parse(fs.readFileSync('ChatHistory.json'));
 
-    return messages;
+//     return messages;
 
-  }
-}
+//   }
+// }
 
 app.use(express.json());
 app.use(cors());
 
 app.use(express.static(path.join(__dirname, '../build')))
 
+
+
 // app.get('/', (req, res) => {
 //   res.sendFile(path.join(__dirname, '../build'))
 // })
+
+// const orango = require('orango');
+// const { default: Chat } = require('../src/Chat');
+// const {EVENTS} = orango.consts;
+// const db = orango.get('_system')
+
+
+// db.events.once(EVENTS.CONNECTED, conn => {
+//   console.log('Connected to arango db', conn.url + '/' + conn.name);
+// })
+
+// db.events.once(EVENTS.READY, ()=> {
+//   console.log('Orango is ready');
+// })
+
+// orangoMain();
+
+
+async function orangoMain() {
+  try {
+    setup();
+    await db.connect({username: 'root', password: 'rootpassword'})
+    console.log('Are we connected?', db.connection.connected);
+  } catch(e) {
+    console.log('Error:', e.message);
+  }
+
+  populateDb();
+
+}
+
+
+function setup(){
+  let chatroomSchema = new db.Schema({
+    title: {type: String, required: 'insert'}
+  })
+  orango.model('Chatroom', chatroomSchema)
+  
+  let userSchema = new db.Schema({
+    username: {type: String, required: 'insert'}
+  })
+  orango.model('User', userSchema)
+  
+  let messageSchema = new db.Schema({
+    text: {type: String, required: 'insert'}
+  })
+  orango.model('Message', messageSchema)
+  
+  let roomEdge = new db.Schema({})
+  roomEdge.type('edge', {
+    from: 'Message', 
+    to: 'Chatroom'
+  })
+  orango.model('Room', roomEdge)
+  
+  let senderEdge = new db.Schema({})
+  senderEdge.type('edge', {
+    from: 'User', 
+    to: 'Message'
+  })
+  orango.model('Sender', senderEdge)
+}
+
+async function populateDb() {
+  const Chatroom = orango.model('Chatroom')
+  const User = orango.model('User')
+  const Message = orango.model('Message')
+  const Room = orango.model('Room')
+  const Sender = orango.model('Sender')
+
+  // const exist = await Chatroom.find();
+  
+  // console.log(exist);
+  await Chatroom.insert({title: "Amanda's hangout"});
+  await Chatroom.insert({title: "Dessis hörna"});
+  await Chatroom.insert({title: "Teo's room"});
+  await Chatroom.insert({title: "Jontes hydda"});
+  await Chatroom.insert({title: "Tintins palats"});
+  await Chatroom.insert({title: "Alex's quarter"});
+  await Chatroom.insert({title: "RS clubhouse"});
+  
+  
+  await User.insert({username: 'Amanda'})
+  await User.insert({username: 'Dessi'})
+  await User.insert({username: 'Teo'})
+  await User.insert({username: 'Jonte'})
+  await User.insert({username: 'Tintin'})
+  await User.insert({username: 'Alex'})
+  await User.insert({username: 'Conrad'})
+  await User.insert({username: 'Anders'})
+  await User.insert({username: 'Anton'})
+  await User.insert({username: 'Mikael'})
+  await User.insert({username: 'Jonas'})
+  await User.insert({username: 'Daniel'})
+  await User.insert({username: 'Alexander'})
+  const user = (await User.insert({username: 'Magnus'}).return())[0]
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 app.get('/chatroom/:roomId/messages', async (req, res) => {
